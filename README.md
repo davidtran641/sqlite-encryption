@@ -19,7 +19,7 @@ and then calling the `sqlite3_key_v2` function:
 int keyRes = sqlite3_key_v2(db, NULL, key.UTF8String, (int)key.length);
 ```
 
-The database will be encrypted.
+The database will be encrypted. For more detail, check the `ViewController.openDB` function.
 
 Notice that this function only  run successfully on iOS 13+.
 
