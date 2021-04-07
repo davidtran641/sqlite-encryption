@@ -8,8 +8,8 @@
 #import "ViewController.h"
 #import <sqlite3.h>
 
-/// Declare the function so that it can be runable
-/// The actual implementation was in sqlite3 library already
+/// Declare the function so that this function can be callable.
+/// The actual implementation was in sqlite3 library already.
 int sqlite3_key_v2(sqlite3 *db, const char *zDb, const void *pKey, int nKey);
 
 @interface ViewController ()
@@ -42,10 +42,18 @@ int sqlite3_key_v2(sqlite3 *db, const char *zDb, const void *pKey, int nKey);
     int keyRes = sqlite3_key_v2(db, NULL, key.UTF8String, (int)key.length);
     if (keyRes != SQLITE_OK) {
         NSLog(@"Encrypt database failed: %d", keyRes);
+        return;
     }
     
-    const char *stm = "CREATE TABLE IF NOT EXISTS CONTACT \
-    (ID INTEGER PRIMARY KEY AUTOINCREMENT, NAME TEXT, ADDRESS TEXT, PHONE TEXT)";
+    [self createTable:db];
+    [self useDB:db];
+    
+    sqlite3_close(db);
+}
+
+- (void) createTable: (sqlite3*) db {
+    const char *stm = "CREATE TABLE IF NOT EXISTS Contact \
+    (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT)";
     
     char *errMsg;
     if (sqlite3_exec(db, stm, NULL, NULL, &errMsg) != SQLITE_OK) {
@@ -53,9 +61,33 @@ int sqlite3_key_v2(sqlite3 *db, const char *zDb, const void *pKey, int nKey);
     } else {
         NSLog(@"Create table success");
     }
+}
+
+- (void) useDB: (sqlite3*) db  {
+    const char *insertStm = "INSERT INTO Contact(name, email) VALUES ('Julia', 'j@email.com')";
+    char *errMsgInsert;
+    if (sqlite3_exec(db, insertStm, NULL, NULL, &errMsgInsert) != SQLITE_OK) {
+        NSLog(@"Insert error: %s", errMsgInsert);
+    } else {
+        NSLog(@"Insert success");
+    }
     
-    sqlite3_close(db);
-    
+    const char *selectStm = "SELECT * FROM Contact WHERE 1";
+    sqlite3_stmt *stmt;
+    int selectCode = sqlite3_prepare_v2(db, selectStm, -1, &stmt, NULL);
+    if (selectCode != SQLITE_OK ) {
+        NSLog(@"Select error: %d", selectCode);
+    } else {
+        NSLog(@"Select result:");
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            int userId = sqlite3_column_int(stmt, 0);
+            const unsigned char *name = sqlite3_column_text(stmt, 1);
+            const unsigned char *email = sqlite3_column_text(stmt, 2);
+            
+            NSLog(@"User: %d, %s, %s", userId, name, email);
+        }
+        sqlite3_finalize(stmt);
+    }
 }
 
 @end
